@@ -28,7 +28,7 @@ class Solver(object):
         # load net
         net_config: dict = dict(
             default_config['net'], **user_config.get('net', default_config['net']))
-        net_module = __import__(net_config['module'])
+        net_module = __import__(net_config['module'], fromlist=['wzx'])
         net_class = getattr(net_module, net_config['net'])
         # self.num_classes = net_config['num_classes']
         # self.first_tag = net_config['first_tag'] # to test_config
