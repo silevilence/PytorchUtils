@@ -53,6 +53,7 @@ class Solver(object):
         # tensorboardX
         self.log_root = net_config['log_root']
         self.log_file = net_config['log_file']
+        self.writer = None
 
         # gpu mode
         if net_config['gpu']:
