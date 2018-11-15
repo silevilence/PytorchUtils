@@ -1,4 +1,4 @@
-import Solver
+from utils import Solver
 import sys
 
 if __name__ == "__main__":

@@ -17,7 +17,7 @@ class Solver(object):
     def __init__(self, config: str = ''):
         # load configs
         default_config_file = open(
-            os.path.join(os.path.split(os.path.realpath(__file__))[0], 'default.json'), 'r')
+            os.path.abspath(os.path.join(os.path.dirname(__file__), os.path.pardir, 'presets', 'default.json')), 'r')
         default_config = json.load(default_config_file)
         if not (isinstance(config, str) and os.path.exists(config)):
             user_config = default_config
