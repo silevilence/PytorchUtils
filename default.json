@@ -1,6 +1,6 @@
 {
     "net": {
-        "module": "AlexNet",
+        "module": "presets.AlexNet",
         "net": "AlexNet",
         "net_params": {
             "num_classes": 10
