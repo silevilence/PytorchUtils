@@ -31,6 +31,31 @@
             "shuffle": true,
             "batch_size": 16
         },
+        "transforms": [
+            {
+                "module": "presets.transform",
+                "name": "PadImage",
+                "params": {
+                    "size": "image_size"
+                }
+            },
+            {
+                "module": "presets.transform",
+                "name": "PostAlways",
+                "params": {
+                    "mean": [
+                        0.5,
+                        0.5,
+                        0.5
+                    ],
+                    "std": [
+                        0.5,
+                        0.5,
+                        0.5
+                    ]
+                }
+            }
+        ],
         "snapshot_interval": 1,
         "snapshot_prefix": "",
         "snapshot_root": ".",
@@ -43,6 +68,31 @@
             "shuffle": false,
             "batch_size": 1
         },
+        "transforms": [
+            {
+                "module": "presets.transform",
+                "name": "PadImage",
+                "params": {
+                    "size": "image_size"
+                }
+            },
+            {
+                "module": "presets.transform",
+                "name": "PostAlways",
+                "params": {
+                    "mean": [
+                        0.5,
+                        0.5,
+                        0.5
+                    ],
+                    "std": [
+                        0.5,
+                        0.5,
+                        0.5
+                    ]
+                }
+            }
+        ],
         "count": false
     },
     "test": {
@@ -51,6 +101,31 @@
             "shuffle": false,
             "batch_size": 32
         },
+        "transforms": [
+            {
+                "module": "presets.transform",
+                "name": "PadImage",
+                "params": {
+                    "size": "image_size"
+                }
+            },
+            {
+                "module": "presets.transform",
+                "name": "PostAlways",
+                "params": {
+                    "mean": [
+                        0.5,
+                        0.5,
+                        0.5
+                    ],
+                    "std": [
+                        0.5,
+                        0.5,
+                        0.5
+                    ]
+                }
+            }
+        ],
         "count": true,
         "test_on_train": true,
         "first_tag": 0,

@@ -11,6 +11,7 @@ from torchvision import transforms
 import tensorboardX
 
 from utils.Dataset import MyDataset
+from utils.transformparser import TransformParser
 
 
 class Solver(object):
@@ -60,23 +61,27 @@ class Solver(object):
         else:
             self.V = lambda x, **params: Variable(x, **params)
 
-        # transform
-        image_size = net_config['image_size']
-        transform = transforms.Compose([
-            transforms.Pad(image_size // 2),
-            transforms.CenterCrop(image_size),
-            transforms.ToTensor(),
-            transforms.Normalize(mean=[.5, .5, .5], std=[.5, .5, .5])
-        ])
+        # transform parser
+        # image_size = net_config['image_size']
+        # transform = transforms.Compose([
+        #     transforms.Pad(image_size // 2),
+        #     transforms.CenterCrop(image_size),
+        #     transforms.ToTensor(),
+        #     transforms.Normalize(mean=[.5, .5, .5], std=[.5, .5, .5])
+        # ])
+        parser = TransformParser(net_params=net_config)
 
         # load train config
         train_config: dict = dict(
             default_config['train'], **user_config.get('train', default_config['train'])
         )
+        # transform
+        train_transform = parser.parse(train_config['transforms'])
+
         # train dataset
         data_root = train_config['data_root'] if 'data_root' in train_config else net_config['data_root']
         self.train_data = MyDataset(txt=os.path.join(data_root, train_config['data']),
-                                    transform=transform, data_root=net_config['image_root'],
+                                    transform=train_transform, data_root=net_config['image_root'],
                                     count=train_config['count'], title="Train data:")
         self.train_loader = DataLoader(
             dataset=self.train_data, **train_config['loader_params'])
@@ -93,10 +98,13 @@ class Solver(object):
         eval_config: dict = dict(
             default_config['eval'], **user_config.get('eval', default_config['eval'])
         )
+        # transform
+        eval_transform = parser.parse(eval_config['transforms'])
+
         # eval dataset
         data_root = eval_config['data_root'] if 'data_root' in eval_config else net_config['data_root']
         self.eval_data = MyDataset(txt=os.path.join(data_root, eval_config['data']),
-                                   transform=transform, data_root=net_config['image_root'],
+                                   transform=eval_transform, data_root=net_config['image_root'],
                                    count=eval_config['count'], title='Eval data:')
         self.eval_loader = DataLoader(
             dataset=self.eval_data, **eval_config['loader_params'])
@@ -105,10 +113,13 @@ class Solver(object):
         test_config: dict = dict(
             default_config['test'], **user_config.get('test', default_config['test'])
         )
+        # transform
+        test_transform = parser.parse(test_config['transforms'])
+
         # test dataset
         data_root = test_config['data_root'] if 'data_root' in test_config else net_config['data_root']
         self.test_data = MyDataset(txt=os.path.join(data_root, test_config['data']),
-                                   transform=transform, data_root=net_config['image_root'],
+                                   transform=test_transform, data_root=net_config['image_root'],
                                    count=test_config['count'], title='Test data:')
         self.test_loader = DataLoader(
             dataset=self.test_data, **test_config['loader_params'])
