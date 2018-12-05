@@ -42,7 +42,6 @@
             }
         ],
         "count": true,
-        "test_on_train": true,
         "first_tag": 0,
         "num_classes": 10,
         "result_root": ".",
