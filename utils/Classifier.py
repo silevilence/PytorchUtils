@@ -8,8 +8,8 @@ import os
 
 
 class Tester(object):
-    def __init__(self, config: str = '', test_root: str = '.'):
-        self.test_root = test_root
+    def __init__(self, config: str = '', test_image: str = '.'):
+        self.test_image = test_image
 
         # load configs
         default_config_file = open(
@@ -68,7 +68,7 @@ class Tester(object):
         default_config_file.close()
 
     def test(self):
-        weightses = os.listdir(self.test_root)
+        # weightses = os.listdir(self.test_root)
 
         pb = progressbar.ProgressBar(widgets=[progressbar.Percentage(),
                                               '(', progressbar.SimpleProgress(), ')',

@@ -1,0 +1,25 @@
+{
+    "net": {
+        "module": "presets.AlexNet",
+        "net": "AlexNet",
+        "net_params": {
+            "num_classes": 10
+        },
+        "image_size": 227,
+        "gpu": true,
+        "image_root": "D:/bone/tou",
+        "data_root": ".",
+        "data": "",
+        "loader_params": {
+            "shuffle": false,
+            "batch_size": 32
+        },
+        "count": true,
+        "test_on_train": true,
+        "first_tag": 0,
+        "num_classes": 10,
+        "result_root": ".",
+        "top1_prefix": "top1",
+        "top2_prefix": "top2"
+    }
+}
