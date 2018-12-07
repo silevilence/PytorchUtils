@@ -44,7 +44,7 @@
         "first_tag": 0,
         "num_classes": 10,
         "result_root": ".",
-        "top1_prefix": "top1",
-        "top2_prefix": "top2"
+        "top1_prefix": "test_top1",
+        "top2_prefix": "test_top2"
     }
 }

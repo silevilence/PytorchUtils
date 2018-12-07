@@ -1,10 +1,18 @@
-from utils.Dataset import MyDataset
+import json
+import os
 
-import torch.nn as nn
 import torch
+import torch.nn as nn
+import torch.optim
+import torch.optim.lr_scheduler as lr_scheduler
+from torch.autograd import Variable
+from torch.utils.data import DataLoader
+from torchvision import transforms
+import tensorboardX
 import progressbar
 
-import os
+from utils.Dataset import MyDataset
+from utils.transformparser import TransformParser
 
 
 class Tester(object):
@@ -38,17 +46,19 @@ class Tester(object):
         else:
             self.V = lambda x, **params: Variable(x, **params)
 
-        # transform
-        test_transform = parser.parse(test_config['transforms'])
-
         # load test config
         test_config: dict = dict(
             default_config['test'], **user_config.get('test', default_config['test'])
         )
+
+        parser = TransformParser(net_params=net_config)
+        # transform
+        test_transform = parser.parse(test_config['transforms'])
+
         # test dataset
         data_root = test_config['data_root'] if 'data_root' in test_config else net_config['data_root']
         self.test_data = MyDataset(txt=os.path.join(data_root, test_config['data']),
-                                   transform=transform, data_root=net_config['image_root'],
+                                   transform=test_transform, data_root=net_config['image_root'],
                                    count=test_config['count'], title='Test data:')
         self.test_loader = DataLoader(dataset=self.test_data, **test_config['loader_params'])
 
@@ -69,6 +79,7 @@ class Tester(object):
 
     def test(self):
         weightses = os.listdir(self.test_root)
+        weightses = list(filter(lambda x: os.path.splitext(x)[-1] == '.pkl', weightses))
 
         pb = progressbar.ProgressBar(widgets=[progressbar.Percentage(),
                                               '(', progressbar.SimpleProgress(), ')',
@@ -125,15 +136,10 @@ class Tester(object):
                     # count for mat
                     compare_mat[(label.item(), predict[0].item())] += 1
 
-                loss = self.loss_func(out, labels)
-                test_loss += loss.item()
-
                 pred = torch.max(out, 1)[1]
                 num_correct = (pred == labels).sum()
 
                 test_acc += num_correct.item()
-        print(
-            f'Test Loss: {test_loss / total:.6f}, Acc: {test_acc / total:.6f}({test_acc}/{total})')
 
         total = len(results)
         # top1 output
@@ -171,7 +177,7 @@ class Tester(object):
                 t2f.write(
                     f'{line[0]} {line[1] + self.first_tag} {line[2] + self.first_tag} {line[3]}\
  {line[4] + self.first_tag} {line[5]}\n')
-        # print result satisfy
-        t2f.write(f'accuracy: {acc}({total - len(errors)}/{total})\n')
+            # print result satisfy
+            t2f.write(f'accuracy: {acc}({total - len(errors)}/{total})\n')
 
         return rtotal, rerrors
