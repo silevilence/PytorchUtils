@@ -8,6 +8,8 @@ if __name__ == '__main__':
     else:
         c = Classifier()
 
+    print('loading complete')
+
     line: str = ''
     for line in sys.stdin:
         line = line.strip('\n')
