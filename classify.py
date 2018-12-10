@@ -8,11 +8,14 @@ if __name__ == '__main__':
     else:
         c = Classifier()
 
-    print('loading complete')
+    print('loading complete.')
 
+    # a = c.classify("D:/bone/without/jin1/0.jpg")
+    # print(a)
     line: str = ''
-    for line in sys.stdin:
-        line = line.strip('\n')
+    while True:
+        line = input()
+        line = line.strip('\r\n')
         if line == r'exit':
             break
 
