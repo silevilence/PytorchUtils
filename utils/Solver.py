@@ -33,7 +33,10 @@ class Solver(object):
         net_class = getattr(net_module, net_config['net'])
         # self.num_classes = net_config['num_classes']
         # self.first_tag = net_config['first_tag'] # to test_config
-        self.net = net_class(**net_config['net_params'])
+        self.net: nn.Module = net_class(**net_config['net_params'])
+        self.half = net_config['half']
+        if self.half:
+            self.net.half()
         # print(self.net)
 
         # optimizer
@@ -165,6 +168,8 @@ class Solver(object):
                 niter += 1
 
                 imgs, labels = self.V(imgs), self.V(labels)
+                if self.half:
+                    imgs = imgs.half()
 
                 self.optimizer.zero_grad()
 
@@ -211,6 +216,9 @@ class Solver(object):
             for imgs, labels, _ in self.eval_loader:
                 with torch.no_grad():
                     imgs, labels = self.V(imgs), self.V(labels)
+                    if self.half:
+                        imgs = imgs.half()
+
                     out = self.net(imgs)
                     loss = self.loss_func(out, labels)
                     eval_loss += loss.item()
@@ -251,6 +259,9 @@ class Solver(object):
         for imgs, labels, imgpathes in self.test_loader:
             with torch.no_grad():
                 imgs, labels = self.V(imgs), self.V(labels)
+                if self.half:
+                    imgs = imgs.half()
+
                 out = self.net(imgs)
                 total += labels.size(0)
 
@@ -307,6 +318,7 @@ class Solver(object):
         with open(filename, 'w', newline='') as t2f:
             for line in errors:
                 t2f.write(
-                    f'{line[0]} {line[1] + self.first_tag} {line[2] + self.first_tag} {line[3]} {line[4] + self.first_tag} {line[5]}\n')
+                    f'{line[0]} {line[1] + self.first_tag} {line[2] + self.first_tag} \
+{line[3]} {line[4] + self.first_tag} {line[5]}\n')
             # print result satisfy
             t2f.write(f'accuracy: {acc}({total - len(errors)}/{total})\n')

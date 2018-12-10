@@ -7,6 +7,7 @@
         },
         "image_size": 227,
         "gpu": true,
+        "half": false,
         "image_root": "D:/bone/tou",
         "data_root": ".",
         "optimizer": "SGD",

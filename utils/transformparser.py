@@ -3,7 +3,9 @@ from typing import List, Dict
 
 
 class TransformParser(object):
-    def __init__(self, net_params: dict = dict()):
+    def __init__(self, net_params=None):
+        if net_params is None:
+            net_params = dict()
         self.net_params = net_params
 
     def _parse_single(self, single: dict):

@@ -28,6 +28,9 @@ class Classifier(object):
         net_module = __import__(user_config['module'], fromlist=['wzx'])
         net_class = getattr(net_module, user_config['net'])
         self.net: nn.Module = net_class(**user_config['net_params'])
+        # self.half = user_config['half']
+        # if self.half:
+        #     self.net.half()
 
         # gpu mode
         if user_config['gpu']:
@@ -58,6 +61,8 @@ class Classifier(object):
         data = self.transforms(pil_img)
         data = data.unsqueeze(0)
         inputs = self.V(data)
+        # if self.half:
+        #     inputs = inputs.half()
         output = self.net(inputs)
 
         prediction_max = torch.max(output, 1)[1]

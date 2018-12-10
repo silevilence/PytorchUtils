@@ -1,4 +1,5 @@
 import torchvision.transforms as T
+import torch
 
 
 def PadImage(size: int):
@@ -8,7 +9,11 @@ def PadImage(size: int):
     ]
 
 
-def PostAlways(mean=[.5, .5, .5], std=[.5, .5, .5]):
+def PostAlways(mean=None, std=None):
+    if std is None:
+        std = [.5, .5, .5]
+    if mean is None:
+        mean = [.5, .5, .5]
     return [
         T.ToTensor(),
         T.Normalize(mean=mean, std=std)
