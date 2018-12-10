@@ -1,12 +1,12 @@
-from utils.Classifier import Classifier
+from utils.ComposedClassifier import ComposedClassifier
 import sys
 import os
 
 if __name__ == '__main__':
     if len(sys.argv) > 1:
-        c = Classifier(config=sys.argv[1])
+        c = ComposedClassifier(config=sys.argv[1])
     else:
-        c = Classifier()
+        c = ComposedClassifier()
 
     print('loading complete.')
 
