@@ -1,15 +1,9 @@
-from utils.Dataset import MyDataset
-from utils.transformparser import TransformParser
 from utils.Classifier import Classifier
 
-import torch.nn as nn
-import torch
-import progressbar
-from torch.autograd import Variable
-from PIL import Image
 import json
-
 import os
+
+from typing import List
 
 
 class ComposedClassifier(Classifier):
@@ -17,6 +11,7 @@ class ComposedClassifier(Classifier):
     Composed classifier.
     Combine several classifiers to a classify chain.
     """
+
     def __init__(self, config: str = ''):
         # load configs
         default_config_file = open(
@@ -27,34 +22,18 @@ class ComposedClassifier(Classifier):
             user_config = default_config
         else:
             user_config_file = open(config, 'r')
-            user_config: dict = json.load(user_config_file)
+            user_config: list = json.load(user_config_file)
 
-        # load net
-        net_module = __import__(user_config['module'], fromlist=['wzx'])
-        net_class = getattr(net_module, user_config['net'])
-        self.net: nn.Module = net_class(**user_config['net_params'])
-        # self.half = user_config['half']
-        # if self.half:
-        #     self.net.half()
+        # generate list of classifiers
+        self.clas: List[dict] = list()
+        for classifier_config in user_config:
+            classifier_module = __import__(classifier_config['module'], fromlist=[classifier_config['classifier']])
+            classifier_class = getattr(classifier_module, classifier_config['classifier'])
+            classifier_app: Classifier = classifier_class(**classifier_config['params'])
 
-        # gpu mode
-        if user_config['gpu']:
-            self.net = self.net.cuda()
-            self.V = lambda x, **params: Variable(x.cuda(), **params)
-        else:
-            self.V = lambda x, **params: Variable(x, **params)
-
-        # load state dict(weights)
-        self.net.load_state_dict(torch.load(user_config['weights']))
-
-        # transform
-        parser = TransformParser(net_params=user_config)
-        self.transforms = parser.parse(user_config['transforms'])
-
-        # offset(first tag)
-        self.first_tag = user_config['first_tag']
-
-        self.net.eval()
+            classifier = dict(classifier=classifier_app,
+                              condition=classifier_config['condition'])
+            self.clas.append(classifier)
 
         # close file stream
         if 'user_config_file' in locals() or 'user_config_file' in globals():
@@ -62,14 +41,13 @@ class ComposedClassifier(Classifier):
         default_config_file.close()
 
     def classify(self, image_path: str):
-        pil_img = Image.open(image_path)
-        data = self.transforms(pil_img)
-        data = data.unsqueeze(0)
-        inputs = self.V(data)
-        # if self.half:
-        #     inputs = inputs.half()
-        output = self.net(inputs)
+        # variable
+        result: int = -1
 
-        prediction_max = torch.max(output, 1)[1]
-        predy_int = int(prediction_max.data.numpy())
-        return predy_int + self.first_tag
+        # classify
+        for classifier in self.clas:
+            need_run = eval(classifier['condition'])
+            if need_run:
+                result = classifier['classifier'].classify(image_path)
+
+        return result
