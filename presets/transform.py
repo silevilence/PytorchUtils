@@ -18,3 +18,22 @@ def PostAlways(mean=None, std=None):
         T.ToTensor(),
         T.Normalize(mean=mean, std=std)
     ]
+
+
+class ToRGB(object):
+    """
+    Convert a PIL Image to RGB
+    """
+
+    def __call__(self, pic):
+        """
+        Args:
+            pic (PIL Image): Image to be converted to RGB.
+
+        Returns:
+            Tensor: Converted image.
+        """
+        return pic.convert('RGB')
+
+    def __repr__(self):
+        return self.__class__.__name__ + '()'
