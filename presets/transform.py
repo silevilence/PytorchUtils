@@ -1,6 +1,8 @@
 import torchvision.transforms as T
 import torch
 
+from PIL import Image
+
 
 def PadImage(size: int):
     return [
@@ -33,6 +35,9 @@ class ToRGB(object):
         Returns:
             Tensor: Converted image.
         """
+        if not (isinstance(pic, Image.Image)):
+            raise TypeError('pic should be PIL Image. Got {}'.format(type(pic)))
+
         return pic.convert('RGB')
 
     def __repr__(self):
