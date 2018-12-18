@@ -1,4 +1,4 @@
 # PytorchUtils
-pytorch utils (for personal use only).
-utils to help create CNN classifiers with pytorch.
-test under win10, pytorch 0.4.
+Pytorch utils (for personal use only).
+Utils to help create cnn classifiers with pytorch.
+Test under win10, pytorch 0.4.

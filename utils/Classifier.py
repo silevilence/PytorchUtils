@@ -40,10 +40,14 @@ class Classifier(object):
             self.V = lambda x, **params: Variable(x, **params)
 
         # load state dict(weights)
+        weights = user_config['weights']
+        if not os.path.exists(weights):
+            weights = os.path.abspath(os.path.join(os.path.split(config)[0], os.path.split(weights)[1]))
+
         if user_config['gpu']:
-            self.net.load_state_dict(torch.load(user_config['weights']))
+            self.net.load_state_dict(torch.load(weights))
         else:
-            self.net.load_state_dict(torch.load(user_config['weights'], map_location=torch.device('cpu')))
+            self.net.load_state_dict(torch.load(weights, map_location=torch.device('cpu')))
 
         # transform
         parser = TransformParser(net_params=user_config)
