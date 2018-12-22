@@ -41,7 +41,8 @@ class ToRGB(object):
             Tensor: Converted image.
         """
         if not (isinstance(pic, Image.Image)):
-            raise TypeError('pic should be PIL Image. Got {}'.format(type(pic)))
+            raise TypeError(
+                'pic should be PIL Image. Got {}'.format(type(pic)))
 
         return pic.convert('RGB')
 
@@ -58,11 +59,14 @@ class RandomTranslate(object):
         """
         if isinstance(trans_range, numbers.Number):
             # 分别是左右上下四个界限
-            self.range = (-abs(trans_range), abs(trans_range), -abs(trans_range), abs(trans_range))
+            self.range = (-abs(trans_range), abs(trans_range), -
+                          abs(trans_range), abs(trans_range))
         elif len(trans_range) == 2:
-            self.range = (-abs(trans_range[0]), abs(trans_range[0]), -abs(trans_range[1]), abs(trans_range[1]))
+            self.range = (-abs(trans_range[0]), abs(trans_range[0]
+                                                    ), -abs(trans_range[1]), abs(trans_range[1]))
         else:
-            self.range = (-abs(trans_range[0]), abs(trans_range[1]), -abs(trans_range[2]), abs(trans_range[3]))
+            self.range = (-abs(trans_range[0]), abs(trans_range[1]
+                                                    ), -abs(trans_range[2]), abs(trans_range[3]))
 
     @staticmethod
     def get_params(trans_range):
