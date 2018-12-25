@@ -60,7 +60,7 @@ class RandomTranslate(object):
         if isinstance(trans_range, numbers.Number):
             # 分别是左右上下四个界限
             self.range = (-abs(trans_range), abs(trans_range), -
-                          abs(trans_range), abs(trans_range))
+            abs(trans_range), abs(trans_range))
         elif len(trans_range) == 2:
             self.range = (-abs(trans_range[0]), abs(trans_range[0]
                                                     ), -abs(trans_range[1]), abs(trans_range[1]))
@@ -92,3 +92,39 @@ class RandomTranslate(object):
 
     def __repr__(self):
         return f'{self.__class__.__name__}(range={self.range})'
+
+
+class RandomCenterCrop(object):
+    """Crops the given PIL Image at the center.
+    Created by crh.
+
+    Args:
+        size (sequence or int): Desired output size of the crop. If size is an
+            int instead of sequence like (h, w), a square crop (size, size) is
+            made.
+    """
+
+    def __init__(self, size):
+        if isinstance(size, numbers.Number):
+            self.size = (int(size), int(size))
+        else:
+            self.size = size
+
+    def get_params(self, img):
+        i = random.randint(img.size[0] - self.size[0], img.size[0])
+        j = random.randint(img.size[1] - self.size[1], img.size[1])
+        return i, j
+
+    def __call__(self, img):
+        """
+        Args:
+            img (PIL Image): Image to be cropped.
+
+        Returns:
+            PIL Image: Cropped image.
+        """
+        i, j = self.get_params(img)
+        return F.center_crop(img, (j, i))
+
+    def __repr__(self):
+        return self.__class__.__name__ + '(size={0})'.format(self.size)
