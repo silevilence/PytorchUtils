@@ -60,8 +60,8 @@ class RandomTranslate(object):
         """
         if isinstance(trans_range, numbers.Number):
             # 分别是左右上下四个界限
-            self.range = (-abs(trans_range), abs(trans_range), -
-            abs(trans_range), abs(trans_range))
+            self.range = (-abs(trans_range), abs(trans_range),
+                          -abs(trans_range), abs(trans_range))
         elif len(trans_range) == 2:
             self.range = (-abs(trans_range[0]), abs(trans_range[0]
                                                     ), -abs(trans_range[1]), abs(trans_range[1]))
