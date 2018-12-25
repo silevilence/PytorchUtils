@@ -1,5 +1,6 @@
 from torchvision import transforms
 from typing import List, Dict, Any
+import inspect
 
 
 class TransformParser(object):
@@ -39,7 +40,7 @@ class TransformParser(object):
         if 'multi' in single:
             multi = single['multi']
         else:
-            multi = (tmodule != transforms)
+            multi = (tmodule != transforms) and inspect.isfunction(topt)
 
         return topt(**params), multi
 
