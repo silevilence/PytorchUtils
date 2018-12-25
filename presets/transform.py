@@ -1,4 +1,5 @@
 import torchvision.transforms as T
+import torchvision.transforms.functional as FF
 import torch
 
 import random
@@ -126,7 +127,7 @@ class RandomCenterCrop(object):
             PIL Image: Cropped image.
         """
         i, j = self.get_params(img)
-        return F.center_crop(img, (j, i))
+        return FF.center_crop(img, (j, i))
 
     def __repr__(self):
         return self.__class__.__name__ + '(size={0})'.format(self.size)
@@ -145,7 +146,7 @@ class RandomResize(object):
     def get_params(self, img):
         isize = img.size
         edge = min(isize)
-        s = random.randint(edge * self.size[0], edge * self.size[1])
+        s = random.randint(int(edge * self.size[0]), int(edge * self.size[1]))
         return s
 
     def __call__(self, img):
@@ -156,7 +157,8 @@ class RandomResize(object):
         :return: resized pil image
         """
         s = self.get_params(img)
-        return T.Resize(s)(img)
+        # return T.Resize(s)(img)
+        return FF.resize(img, s)
 
     def __repr__(self):
         return self.__class__.__name__ + '(size={0})'.format(self.size)
