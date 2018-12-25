@@ -7,6 +7,7 @@ import numbers
 from PIL import Image
 from . import functional as F
 from typing import Union
+import collections
 
 
 def PadImage(size: int):
@@ -104,6 +105,7 @@ class RandomCenterCrop(object):
             made.
     """
 
+    # noinspection PyTypeChecker
     def __init__(self, size):
         if isinstance(size, numbers.Number):
             self.size = (int(size), int(size))
@@ -128,3 +130,30 @@ class RandomCenterCrop(object):
 
     def __repr__(self):
         return self.__class__.__name__ + '(size={0})'.format(self.size)
+
+
+class RandomResize(object):
+    # noinspection PyTypeChecker
+    def __init__(self, size=(0.8, 1.2)):
+        """Random resize by ratio
+
+        :param size: ratio tuple or list
+        """
+        assert (isinstance(size, collections.Iterable) and len(size) == 2)
+        self.size = size
+
+    def get_params(self, img):
+        isize = img.size
+        edge = min(isize)
+        s = random.randint(edge * self.size[0], edge * self.size[1])
+        return s
+
+    def __call__(self, img):
+        """random resize.
+        by zxn.
+
+        :param img: PIL image
+        :return: resized pil image
+        """
+        s = self.get_params(img)
+        return T.Resize(s)(img)
