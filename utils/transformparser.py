@@ -22,7 +22,7 @@ class TransformParser(object):
             # return ps
         # dict, parse as a transform
         elif isinstance(param, dict):
-            return self._parse_single_transform(param)
+            return self._parse_single_transform(param)[0]
         else:
             return param
 
