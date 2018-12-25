@@ -157,3 +157,6 @@ class RandomResize(object):
         """
         s = self.get_params(img)
         return T.Resize(s)(img)
+
+    def __repr__(self):
+        return self.__class__.__name__ + '(size={0})'.format(self.size)
