@@ -1,0 +1,29 @@
+net:
+  data_root: .
+  gpu: true
+  image_root: D:/bone/tou
+  image_size: &size 227
+  module: presets.AlexNet
+  net: AlexNet
+  net_params: 
+    num_classes: 10
+test:
+  data: ''
+  first_tag: 0
+  loader_params: 
+    batch_size: 32
+    shuffle: false
+  num_classes: 10
+  result_root: .
+  top1_prefix: test_top1
+  top2_prefix: test_top2
+  transforms:
+  - module: presets.transform
+    name: PadImage
+    params: 
+      size: *size
+  - module: presets.transform
+    name: PostAlways
+    params:
+      mean: [0.5, 0.5, 0.5]
+      std: [0.5, 0.5, 0.5]

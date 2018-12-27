@@ -1,0 +1,82 @@
+net:
+  data_root: .
+  gpu: true
+  half: false
+  image_root: D:/bone/tou
+  image_size: &size 227
+  num_classes: &nclasses 10
+  log_file: log
+  log_root: .
+  loss_func: CrossEntropyLoss
+  lr_scheduler: StepLR
+  lr_scheduler_params: 
+    gamma: 0.1
+    step_size: 5
+  module: presets.AlexNet
+  net: AlexNet
+  net_params: 
+    num_classes: *nclasses
+  optimizer: SGD
+  optimizer_params: 
+    lr: 0.001
+    momentum: 0.9
+    weight_decay: 0.0005
+train:
+  count: true
+  data: ''
+  display_interval: 20
+  loader_params: 
+    batch_size: 16
+    shuffle: true
+  max_epoches: 60
+  snapshot_interval: 1
+  snapshot_prefix: ''
+  snapshot_root: .
+  transforms:
+  - module: presets.transform
+    name: PadImage
+    params: 
+      size: *size
+  - module: presets.transform
+    name: PostAlways
+    params:
+      mean: [0.5, 0.5, 0.5]
+      std: [0.5, 0.5, 0.5]
+eval:
+  count: false
+  data: ''
+  loader_params: 
+    batch_size: 1
+    shuffle: false
+  transforms:
+  - module: presets.transform
+    name: PadImage
+    params: 
+      size: *size
+  - module: presets.transform
+    name: PostAlways
+    params:
+      mean: [0.5, 0.5, 0.5]
+      std: [0.5, 0.5, 0.5]
+test:
+  count: true
+  data: ''
+  first_tag: 0
+  loader_params: 
+    batch_size: 32
+    shuffle: false
+  num_classes: *nclasses
+  result_root: .
+  test_on_train: true
+  top1_prefix: top1
+  top2_prefix: top2
+  transforms:
+  - module: presets.transform
+    name: PadImage
+    params: 
+      size: *size
+  - module: presets.transform
+    name: PostAlways
+    params:
+      mean: [0.5, 0.5, 0.5]
+      std: [0.5, 0.5, 0.5]
