@@ -14,6 +14,7 @@ import inspect
 import ast
 import _thread as thread
 import time
+import builtins
 
 # ----------------------------------------------------------------------
 # Module globals.
@@ -24,14 +25,17 @@ DEBUG = False
 
 # List of all AST node classes in compiler/ast.py.
 all_ast_nodes = \
-    [name for (name, obj) in inspect.getmembers(ast)
-     if inspect.isclass(obj) and issubclass(obj, ast.Node)]
-
+    [name for name, obj in inspect.getmembers(ast)
+     if inspect.isclass(obj) and issubclass(obj, ast.AST)]
+# print(all_ast_nodes)
 # List of all builtin functions and types (ignoring exception classes).
 all_builtins = \
-    [name for (name, obj) in inspect.getmembers(__builtins__)
-     if inspect.isbuiltin(obj) or (inspect.isclass(obj) and
-                                   not issubclass(obj, Exception))]
+    [name for name, obj in inspect.getmembers(builtins)
+     if (not inspect.isclass(obj)) or (not issubclass(obj, Exception))]
+
+
+# print(all_builtins)
+
 
 # ----------------------------------------------------------------------
 # Utilties.
@@ -51,7 +55,8 @@ def is_valid_builtin(name):
 
 
 def get_node_lineno(node):
-    return (node.lineno) and node.lineno or 0
+    return node.lineno and node.lineno or 0
+
 
 # ----------------------------------------------------------------------
 # Restricted AST nodes & builtins.
@@ -63,19 +68,20 @@ unallowed_ast_nodes = [
     #   'Add', 'And',
     #   'AssAttr', 'AssList', 'AssName', 'AssTuple',
     #   'Assert', 'Assign', 'AugAssign',
-    'Backquote',
+    # 'Backquote',
     #   'Bitand', 'Bitor', 'Bitxor', 'Break',
     #   'CallFunc', 'Class', 'Compare', 'Const', 'Continue',
     #   'Decorators', 'Dict', 'Discard', 'Div',
     #   'Ellipsis', 'EmptyNode',
-    'Exec',
+    # 'Exec',
+    'ExceptHandler',
     #   'Expression', 'FloorDiv',
     #   'For',
-    'From',
+    # 'From',
     #   'Function',
     #   'GenExpr', 'GenExprFor', 'GenExprIf', 'GenExprInner',
     #   'Getattr', 'Global', 'If',
-    'Import',
+    'Import', 'ImportFrom',
     #   'Invert',
     #   'Keyword', 'Lambda', 'LeftShift',
     #   'List', 'ListComp', 'ListCompFor', 'ListCompIf', 'Mod',
@@ -85,7 +91,8 @@ unallowed_ast_nodes = [
     'Raise',
     #    'Return', 'RightShift', 'Slice', 'Sliceobj',
     #   'Stmt', 'Sub', 'Subscript',
-    'TryExcept', 'TryFinally',
+    'Try',
+    # 'TryExcept', 'TryFinally',
     #   'Tuple', 'UnaryAdd', 'UnarySub',
     #   'While','Yield'
 ]
@@ -101,7 +108,7 @@ unallowed_builtins = [
     #   'dict',
     'dir',
     #   'divmod', 'enumerate',
-    'eval', 'execfile', 'file',
+    'eval',  # 'execfile', 'file',
     #   'filter', 'float', 'frozenset',
     'getattr', 'globals', 'hasattr',
     #    'hash', 'hex', 'id',
@@ -112,9 +119,9 @@ unallowed_builtins = [
     #   'long', 'map', 'max', 'min', 'object', 'oct',
     'open',
     #   'ord', 'pow', 'property', 'range',
-    'raw_input',
+    # 'raw_input',
     #   'reduce',
-    'reload',
+    # 'reload',
     #   'repr', 'reversed', 'round', 'set',
     'setattr',
     #   'slice', 'sorted', 'staticmethod',  'str', 'sum', 'super',
@@ -124,9 +131,11 @@ unallowed_builtins = [
 ]
 
 for ast_name in unallowed_ast_nodes:
-    assert(is_valid_ast_node(ast_name))
+    # print(ast_name)
+    assert (is_valid_ast_node(ast_name))
 for name in unallowed_builtins:
-    assert(is_valid_builtin(name))
+    # print(name)
+    assert (is_valid_builtin(name))
 
 
 def is_unallowed_ast_node(kind):
@@ -135,6 +144,7 @@ def is_unallowed_ast_node(kind):
 
 def is_unallowed_builtin(name):
     return name in unallowed_builtins
+
 
 # ----------------------------------------------------------------------
 # Restricted attributes.
@@ -154,12 +164,13 @@ def is_unallowed_attr(name):
     return (name[:2] == '__' and name[-2:] == '__') or \
            (name in unallowed_attr)
 
+
 # ----------------------------------------------------------------------
 # SafeEvalVisitor.
 # ----------------------------------------------------------------------
 
 
-class SafeEvalError(object):
+class SafeEvalError(Exception):
     """
     Base class for all which occur while walking the AST.
 
@@ -174,109 +185,77 @@ class SafeEvalError(object):
     def __str__(self):
         return "line %d : %s" % (self.lineno, self.errmsg)
 
+    def __repr__(self):
+        return self.__str__()
+
 
 class SafeEvalASTNodeError(SafeEvalError):
-    "Expression/statement in AST evaluates to a restricted AST node type."
+    """Expression/statement in AST evaluates to a restricted AST node type."""
     pass
 
 
 class SafeEvalBuiltinError(SafeEvalError):
-    "Expression/statement in tried to access a restricted builtin."
+    """Expression/statement in tried to access a restricted builtin."""
     pass
 
 
 class SafeEvalAttrError(SafeEvalError):
-    "Expression/statement in tried to access a restricted attribute."
+    """Expression/statement in tried to access a restricted attribute."""
     pass
 
 
-class SafeEvalVisitor(object):
-    """
-    Data-driven visitor which walks the AST for some code and makes
-    sure it doesn't contain any expression/statements which are
-    declared as restricted in 'unallowed_ast_nodes'. We'll also make
-    sure that there aren't any attempts to access/lookup restricted
-    builtin declared in 'unallowed_builtins'. By default we also won't
-    allow access to lowlevel stuff which can be used to dynamically
-    access non-local envrioments.
-
-    Interface:
-      walk(ast) = validate AST and return True if AST is 'safe'
-
-    Attributes:
-      errors = list of SafeEvalError if walk() returned False
-
-    Implementation:
-
-    The visitor will automatically generate methods for all of the
-    available AST node types and redirect them to self.ok or self.fail
-    reflecting the configuration in 'unallowed_ast_nodes'. While
-    walking the AST we simply forward the validating step to each of
-    node callbacks which take care of reporting errors.
-    """
-
+# noinspection PyMethodMayBeStatic
+class SafeVisitor(ast.NodeVisitor):
     def __init__(self):
-        "Initialize visitor by generating callbacks for all AST node types."
+        """Initialize visitor by generating callbacks for all AST node types."""
         self.errors = []
+        # noinspection PyShadowingNames
         for ast_name in all_ast_nodes:
             # Don't reset any overridden callbacks.
-            if getattr(self, 'visit' + ast_name, None):
+            if getattr(self, 'visit_' + ast_name, None):
                 continue
             if is_unallowed_ast_node(ast_name):
-                setattr(self, 'visit' + ast_name, self.fail)
-            else:
-                setattr(self, 'visit' + ast_name, self.ok)
+                setattr(self, 'visit_' + ast_name, self.fail)
+            # else:
+            #     setattr(self, 'visit_' + ast_name, self.ok)
 
-    def walk(self, asttree):
-        "Validate each node in AST and return True if AST is 'safe'."
-        self.visit(asttree)
-        return self.errors == []
-
-    def visit(self, node, *args):
-        "Recursively validate node and all of its children."
-        fn = getattr(self, 'visit' + classname(node))
-        if DEBUG:
-            self.trace(node)
-        fn(node, *args)
-        for child in node.getChildNodes():
-            self.visit(child, *args)
-
-    def visitName(self, node, *args):
-        "Disallow any attempts to access a restricted builtin/attr."
-        name = node.getChildren()[0]
+    def visit_Name(self, node):
+        """Disallow any attempts to access a restricted builtin/attr."""
+        name = node.id
         lineno = get_node_lineno(node)
         if is_unallowed_builtin(name):
-            self.errors.append(SafeEvalBuiltinError(
+            raise (SafeEvalBuiltinError(
                 "access to builtin '%s' is denied" % name, lineno))
         elif is_unallowed_attr(name):
-            self.errors.append(SafeEvalAttrError(
+            raise (SafeEvalAttrError(
                 "access to attribute '%s' is denied" % name, lineno))
 
-    def visitGetattr(self, node, *args):
-        "Disallow any attempts to access a restricted attribute."
-        name = node.attrname
+        super(SafeVisitor, self).generic_visit(node)
+
+    def visit_Attribute(self, node):
+        """Disallow any attempts to access a restricted attribute."""
+        name = node.attr
         lineno = get_node_lineno(node)
         if is_unallowed_attr(name):
-            self.errors.append(SafeEvalAttrError(
+            raise (SafeEvalAttrError(
                 "access to attribute '%s' is denied" % name, lineno))
 
-    def ok(self, node, *args):
-        "Default callback for 'harmless' AST nodes."
-        pass
+        super().generic_visit(node)
 
-    def fail(self, node, *args):
-        "Default callback for unallowed AST nodes."
+    def fail(self, node):
+        """Default callback for unallowed AST nodes."""
         lineno = get_node_lineno(node)
-        self.errors.append(SafeEvalASTNodeError(
+        raise (SafeEvalASTNodeError(
             "execution of '%s' statements is denied" % classname(node),
             lineno))
 
-    def trace(self, node):
-        "Debugging utility for tracing the validation of AST nodes."
-        print(classname(node))
-        for attr in dir(node):
-            if attr[:2] != '__':
-                print(' ' * 4, "%-15.15s" % attr, getattr(node, attr))
+    def walk(self, tree):
+        try:
+            self.visit(tree)
+        except SafeEvalError as e:
+            return False, e
+        return True, None
+
 
 # ----------------------------------------------------------------------
 # Safe 'eval' replacement.
@@ -284,7 +263,7 @@ class SafeEvalVisitor(object):
 
 
 class SafeEvalException(Exception):
-    "Base class for all safe-eval related errors."
+    """Base class for all safe-eval related errors."""
     pass
 
 
@@ -303,6 +282,9 @@ class SafeEvalCodeException(SafeEvalException):
 
     def __str__(self):
         return '\n'.join([str(err) for err in self.errors])
+
+    def __repr__(self):
+        return self.__str__()
 
 
 class SafeEvalContextException(SafeEvalException):
@@ -339,17 +321,18 @@ class SafeEvalTimeoutException(SafeEvalException):
         return "Timeout limit execeeded (%s secs) during exec" % self.timeout
 
 
-def exec_timed(code, context, timeout_secs):
+def eval_timed(code, context, timeout_secs, executer=eval):
     """
     Dynamically execute 'code' using 'context' as the global enviroment.
     SafeEvalTimeoutException is raised if execution does not finish within
     the given timelimit.
     """
-    assert(timeout_secs > 0)
+    assert (timeout_secs > 0)
 
     signal_finished = False
 
     def alarm(secs):
+        # noinspection PyUnusedLocal,PyShadowingNames
         def wait(secs):
             for n in range(timeout_secs):
                 time.sleep(1)
@@ -357,17 +340,19 @@ def exec_timed(code, context, timeout_secs):
                     break
             else:
                 thread.interrupt_main()
+
         thread.start_new_thread(wait, (secs,))
 
     try:
         alarm(timeout_secs)
-        exec(code, context)
+        result = executer(code, context)
         signal_finished = True
+        return result
     except KeyboardInterrupt:
         raise SafeEvalTimeoutException(timeout_secs)
 
 
-def safe_eval(code, context={}, timeout_secs=5):
+def safe_eval(code, context=None, timeout_secs=5, executer=eval):
     """
     Validate source code and make sure it contains no unauthorized
     expression/statements as configured via 'unallowed_ast_nodes' and
@@ -389,6 +374,8 @@ def safe_eval(code, context={}, timeout_secs=5):
       if code did not execute within the given timelimit =
         SafeEvalTimeoutException
     """
+    if context is None:
+        context = {}
     ctx_errkeys, ctx_errors = [], []
     for (key, obj) in context.items():
         if inspect.isbuiltin(obj):
@@ -402,12 +389,14 @@ def safe_eval(code, context={}, timeout_secs=5):
         raise SafeEvalContextException(ctx_errkeys, ctx_errors)
 
     asttree = ast.parse(code)
-    checker = SafeEvalVisitor()
+    checker = SafeVisitor()
 
-    if checker.walk(asttree):
-        exec_timed(code, context, timeout_secs)
+    successful, err = checker.walk(asttree)
+    if successful:
+        return eval_timed(code, context, timeout_secs, executer)
     else:
-        raise SafeEvalCodeException(code, checker.errors)
+        raise SafeEvalCodeException(code, [err])
+
 
 # ----------------------------------------------------------------------
 # Basic tests.
@@ -428,7 +417,7 @@ class TestSafeEval(unittest.TestCase):
     def test_func_globals(self):
         # attempt to access global enviroment where fun was defined
         self.assertRaises(SafeEvalException,
-                          safe_eval, "def x(): pass; print x.func_globals")
+                          safe_eval, "def x(): pass; print(x.func_globals)")
 
     def test_lowlevel(self):
         # lowlevel tricks to access 'object'
@@ -438,17 +427,18 @@ class TestSafeEval(unittest.TestCase):
     def test_timeout_ok(self):
         # attempt to exectute 'slow' code which finishes within timelimit
         def test(): time.sleep(2)
+
         env = {'test': test}
         safe_eval("test()", env, timeout_secs=5)
 
     def test_timeout_exceed(self):
         # attempt to exectute code which never teminates
         self.assertRaises(SafeEvalException,
-                          safe_eval, "while 1: pass")
+                          safe_eval, "while True: pass", None, 5, exec)
 
     def test_invalid_context(self):
         # can't pass an enviroment with modules or builtins
-        env = {'f': __builtins__.open, 'g': time}
+        env = {'f': builtins.open, 'g': time}
         self.assertRaises(SafeEvalException,
                           safe_eval, "print 1", env)
 
@@ -457,6 +447,7 @@ class TestSafeEval(unittest.TestCase):
         self.value = 0
 
         def test(): self.value = 1
+
         env = {'test': test}
         safe_eval("test()", env)
         self.assertEqual(self.value, 1)
