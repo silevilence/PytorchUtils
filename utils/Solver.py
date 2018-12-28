@@ -16,6 +16,10 @@ from utils.transformparser import TransformParser
 
 class Solver(object):
     def __init__(self, config: str = ''):
+        """ a solver to train a classifier with a set of data.
+
+        :param config: config file
+        """
         # load configs
         default_config_file = open(
             os.path.abspath(os.path.join(os.path.dirname(__file__), os.path.pardir, 'presets', 'default.json')), 'r')
@@ -31,13 +35,10 @@ class Solver(object):
             default_config['net'], **user_config.get('net', default_config['net']))
         net_module = __import__(net_config['module'], fromlist=['wzx'])
         net_class = getattr(net_module, net_config['net'])
-        # self.num_classes = net_config['num_classes']
-        # self.first_tag = net_config['first_tag'] # to test_config
         self.net: nn.Module = net_class(**net_config['net_params'])
         self.half = net_config['half']
         if self.half:
             self.net.half()
-        # print(self.net)
 
         # optimizer
         optimizer = getattr(torch.optim, net_config['optimizer'])
@@ -66,13 +67,6 @@ class Solver(object):
             self.V = lambda x, **params: Variable(x, **params)
 
         # transform parser
-        # image_size = net_config['image_size']
-        # transform = transforms.Compose([
-        #     transforms.Pad(image_size // 2),
-        #     transforms.CenterCrop(image_size),
-        #     transforms.ToTensor(),
-        #     transforms.Normalize(mean=[.5, .5, .5], std=[.5, .5, .5])
-        # ])
         parser = TransformParser(net_params=net_config)
 
         # load train config
@@ -241,7 +235,6 @@ class Solver(object):
                 if self.test_on_train:
                     self._test(epoch + 1)
 
-        # self.writer.export_scalars_to_json(self.log_file)
         self.writer.close()
 
     def _test(self, epoch: int):
