@@ -1,4 +1,5 @@
 from utils.Classifier import Classifier
+from .safe_eval import safe_eval
 
 import json
 import os
@@ -31,7 +32,8 @@ class ComposedClassifier(Classifier):
             classifier_class = getattr(classifier_module, classifier_config['classifier'])
             classifier_app: Classifier = classifier_class(**classifier_config['params'])
 
-            classifier = dict(classifier=classifier_app,
+            classifier = dict(name=classifier_config['name'],
+                              classifier=classifier_app,
                               condition=classifier_config['condition'])
             self.clas.append(classifier)
 
@@ -42,12 +44,13 @@ class ComposedClassifier(Classifier):
 
     def classify(self, image_path: str):
         # variable
-        result: int = -1
+        eval_context = {}
 
         # classify
         for classifier in self.clas:
-            need_run = eval(classifier['condition'])
+            need_run = safe_eval(classifier['condition'], eval_context)
             if need_run:
                 result = classifier['classifier'].classify(image_path)
+                eval_context[classifier['name']] = result
 
         return result
