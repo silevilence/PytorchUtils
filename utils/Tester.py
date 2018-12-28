@@ -17,11 +17,17 @@ from utils.transformparser import TransformParser
 
 class Tester(object):
     def __init__(self, config: str = '', test_root: str = '.'):
+        """ Test the pkl models under a folder.
+
+        :param config: config file
+        :param test_root: folder with models in.
+        """
         self.test_root = test_root
 
         # load configs
         default_config_file = open(
-            os.path.abspath(os.path.join(os.path.dirname(__file__), os.path.pardir, 'presets', 'default_tester.json')), 'r')
+            os.path.abspath(os.path.join(os.path.dirname(__file__), os.path.pardir, 'presets', 'default_tester.json')),
+            'r')
         default_config = json.load(default_config_file)
         if not (isinstance(config, str) and os.path.exists(config)):
             user_config = default_config
@@ -34,10 +40,7 @@ class Tester(object):
             default_config['net'], **user_config.get('net', default_config['net']))
         net_module = __import__(net_config['module'], fromlist=['wzx'])
         net_class = getattr(net_module, net_config['net'])
-        # self.num_classes = net_config['num_classes']
-        # self.first_tag = net_config['first_tag'] # to test_config
         self.net: nn.Module = net_class(**net_config['net_params'])
-        # print(self.net)
 
         # gpu mode
         if net_config['gpu']:
@@ -117,7 +120,6 @@ class Tester(object):
                 compare_mat[(r, c)] = 0
 
         self.net.eval()
-        test_loss = 0.
         test_acc = 0
         total = 0
         results = []
